@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metric Analysis Tool</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        h2, h3 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .card {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: box-shadow 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        input[type="range"] {
+            width: 100%;
+            margin: 10px 0;
+        }
+        button, select {
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover, select:hover {
+            background-color: #2980b9;
+        }
+        #ai-explanation {
+            background-color: #ecf0f1;
+            border-radius: 8px;
+            padding: 15px;
+        }
+        .value-display {
+            font-weight: bold;
+            color: #2980b9;
+        }
+        #explanation-text {
+            white-space: pre-line;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Metric Analysis Tool</h2>
+        
+        <div class="card">
+            <h3>Select Metric</h3>
+            <select id="metric-selector">
+                <option value="netPPE">Net PPE</option>
+                <option value="revenue">Revenue</option>
+                <option value="operatingIncome">Operating Income</option>
+            </select>
+        </div>
+
+        <div class="card" id="estimator-tool">
+            <h3>Estimator</h3>
+            <p>Metric: <span id="current-metric" class="value-display"></span></p>
+            <p>Current Value: <span id="current-value" class="value-display"></span></p>
+            <p>Current KnwnScore: <span id="current-knwnscore" class="value-display"></span></p>
+            <input type="range" id="value-slider" min="50" max="150" step="1" value="100">
+            <p>Estimated Value Range: <span id="estimated-value-range" class="value-display"></span></p>
+            <p>Estimated KnwnScore Range: <span id="estimated-knwnscore-range" class="value-display"></span></p>
+        </div>
+
+        <div class="card" id="ai-explanation">
+            <h3>AI Explanation</h3>
+            <p id="explanation-text">Click the button to get an AI explanation.</p>
+            <button id="explain-button">Get Explanation</button>
+        </div>
+    </div>
+
+    <script>
+        // Sample data for different metrics
+        const sampleData = {
+            netPPE: { value: 5964000.0, knwnScore: 7.53, sectorValue: 1040012.17, name: "Net PPE", symbol: "$" },
+            revenue: { value: 22511000.0, knwnScore: 8.2, sectorValue: 5000000.0, name: "Revenue", symbol: "$" },
+            operatingIncome: { value: 657000.0, knwnScore: 6.8, sectorValue: 300000.0, name: "Operating Income", symbol: "$" }
+        };
+
+        function getUrlParameter(name) {
+            name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+            var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+            var results = regex.exec(location.search);
+            return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+        }
+
+        let currentMetric = getUrlParameter('metric') || 'netPPE';
+        let currentValue = parseFloat(getUrlParameter('value')) || sampleData[currentMetric].value;
+        let currentKnwnScore = parseFloat(getUrlParameter('knwnScore')) || sampleData[currentMetric].knwnScore;
+        let sectorMetricValue = parseFloat(getUrlParameter('sectorValue')) || sampleData[currentMetric].sectorValue;
+
+        const metricSelector = document.getElementById('metric-selector');
+        const currentMetricSpan = document.getElementById('current-metric');
+        const currentValueSpan = document.getElementById('current-value');
+        const currentKnwnScoreSpan = document.getElementById('current-knwnscore');
+        const slider = document.getElementById('value-slider');
+        const estimatedValueRangeSpan = document.getElementById('estimated-value-range');
+        const estimatedKnwnScoreRangeSpan = document.getElementById('estimated-knwnscore-range');
+
+        function formatValue(value, symbol) {
+            return `${symbol}${value.toLocaleString(undefined, {maximumFractionDigits: 2})}`;
+        }
+
+        function updateDisplay() {
+            currentMetricSpan.textContent = sampleData[currentMetric].name;
+            currentValueSpan.textContent = formatValue(currentValue, sampleData[currentMetric].symbol);
+            currentKnwnScoreSpan.textContent = currentKnwnScore.toFixed(2);
+            updateEstimate();
+        }
+
+        function updateEstimate() {
+            const percentage = slider.value / 100;
+            const estimatedValueLow = currentValue * (percentage - 0.05);
+            const estimatedValueHigh = currentValue * (percentage + 0.05);
+            estimatedValueRangeSpan.textContent = `${formatValue(estimatedValueLow, sampleData[currentMetric].symbol)} - ${formatValue(estimatedValueHigh, sampleData[currentMetric].symbol)}`;
+            
+            const valueDeltaLow = (estimatedValueLow - currentValue) / currentValue;
+            const valueDeltaHigh = (estimatedValueHigh - currentValue) / currentValue;
+            const estimatedKnwnScoreLow = Math.min(10, Math.max(0, currentKnwnScore * (1 + valueDeltaLow * 0.5)));
+            const estimatedKnwnScoreHigh = Math.min(10, Math.max(0, currentKnwnScore * (1 + valueDeltaHigh * 0.5)));
+            estimatedKnwnScoreRangeSpan.textContent = `${estimatedKnwnScoreLow.toFixed(2)} - ${estimatedKnwnScoreHigh.toFixed(2)}`;
+        }
+
+        metricSelector.value = currentMetric;
+        metricSelector.addEventListener('change', function() {
+            currentMetric = this.value;
+            currentValue = sampleData[currentMetric].value;
+            currentKnwnScore = sampleData[currentMetric].knwnScore;
+            sectorMetricValue = sampleData[currentMetric].sectorValue;
+            slider.value = 100;
+            updateDisplay();
+        });
+
+        slider.addEventListener('input', updateEstimate);
+
+        function typeWriter(element, text, speed = 1) {
+            let i = 0;
+            element.textContent = '';
+            function type() {
+                if (i < text.length) {
+                    element.textContent += text.charAt(i);
+                    i++;
+                    setTimeout(type, speed);
+                }
+            }
+            type();
+        }
+
+        document.getElementById('explain-button').addEventListener('click', function() {
+            const explanationText = document.getElementById('explanation-text');
+            explanationText.textContent = 'Loading explanation...';
+
+            setTimeout(() => {
+                const aiExplanation = `Net PPE (Property, Plant, and Equipment) represents the total value of Adidas's physical assets like buildings, machinery, and equipment, minus accumulated depreciation.
+
+The KnwnScore of 7.53 for Net PPE indicates that Adidas is performing above average in managing its physical assets compared to its industry peers, as it's higher than the average score of 6.50.
+
+Recommendation: Maintain the current asset management strategy, as the above-average score suggests effective utilization of physical assets. However, continue monitoring for potential areas of improvement to sustain this performance.`;
+                
+                typeWriter(explanationText, aiExplanation, 1);
+            }, 1000);
+        });
+
+        updateDisplay();
+    </script>
+</body>
+</html>
