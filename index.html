@@ -7,59 +7,56 @@
     <style>
         body {
             font-family: 'Arial', sans-serif;
-            background-color: #f0f2f5;
-            color: #333;
-            line-height: 1.6;
-            padding: 20px;
+            background-color: #141215;
+            color: #ffffff;
+            line-height: 1.4;
+            padding: 10px;
             margin: 0;
+            font-size: 14px;
         }
         .container {
-            max-width: 600px;
+            max-width: 100%;
             margin: 0 auto;
-            background-color: #fff;
+            background-color: #141215;
             border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            padding: 20px;
+            padding: 10px;
         }
         h2, h3 {
-            color: #2c3e50;
+            color: #ffffff;
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
+            font-size: 16px;
         }
         .card {
-            background-color: #fff;
+            background-color: #1e1c20;
             border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-            transition: box-shadow 0.3s ease;
-        }
-        .card:hover {
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            padding: 10px;
+            margin-bottom: 10px;
         }
         input[type="range"] {
             width: 100%;
-            margin: 10px 0;
+            margin: 5px 0;
         }
         button, select {
-            background-color: #3498db;
+            background-color: #0774AC;
             color: #fff;
             border: none;
-            padding: 10px 20px;
+            padding: 8px 15px;
             border-radius: 5px;
             cursor: pointer;
             transition: background-color 0.3s ease;
         }
         button:hover, select:hover {
-            background-color: #2980b9;
+            background-color: #055d8a;
         }
         #ai-explanation {
-            background-color: #ecf0f1;
+            background-color: #1e1c20;
             border-radius: 8px;
-            padding: 15px;
+            padding: 10px;
         }
         .value-display {
             font-weight: bold;
-            color: #2980b9;
+            color: #0774AC;
         }
         #explanation-text {
             white-space: pre-line;
@@ -71,7 +68,6 @@
         <h2>Metric Analysis Tool</h2>
         
         <div class="card">
-            <h3>Select Metric</h3>
             <select id="metric-selector">
                 <option value="netPPE">Net PPE</option>
                 <option value="revenue">Revenue</option>
@@ -80,7 +76,6 @@
         </div>
 
         <div class="card" id="estimator-tool">
-            <h3>Estimator</h3>
             <p>Metric: <span id="current-metric" class="value-display"></span></p>
             <p>Current Value: <span id="current-value" class="value-display"></span></p>
             <p>Current KnwnScore: <span id="current-knwnscore" class="value-display"></span></p>
@@ -90,7 +85,6 @@
         </div>
 
         <div class="card" id="ai-explanation">
-            <h3>AI Explanation</h3>
             <p id="explanation-text">Click the button to get an AI explanation.</p>
             <button id="explain-button">Get Explanation</button>
         </div>
@@ -178,11 +172,11 @@
             explanationText.textContent = 'Loading explanation...';
 
             setTimeout(() => {
-                const aiExplanation = `Net PPE (Property, Plant, and Equipment) represents the total value of Adidas's physical assets like buildings, machinery, and equipment, minus accumulated depreciation.
+                const aiExplanation = `${sampleData[currentMetric].name} represents the total value of Adidas's ${currentMetric === 'netPPE' ? 'physical assets like buildings, machinery, and equipment, minus accumulated depreciation' : currentMetric === 'revenue' ? 'sales from its primary operations' : 'profit from its core business activities'}.
 
-The KnwnScore of 7.53 for Net PPE indicates that Adidas is performing above average in managing its physical assets compared to its industry peers, as it's higher than the average score of 6.50.
+The KnwnScore of ${currentKnwnScore.toFixed(2)} for ${sampleData[currentMetric].name} indicates that Adidas is performing ${currentKnwnScore > 6.5 ? 'above' : 'below'} average in managing this metric compared to its industry peers, as it's ${currentKnwnScore > 6.5 ? 'higher' : 'lower'} than the average score of 6.50.
 
-Recommendation: Maintain the current asset management strategy, as the above-average score suggests effective utilization of physical assets. However, continue monitoring for potential areas of improvement to sustain this performance.`;
+Recommendation: ${currentKnwnScore > 6.5 ? 'Maintain the current strategy' : 'Review and potentially adjust the current approach'}, as the ${currentKnwnScore > 6.5 ? 'above-average' : 'below-average'} score suggests ${currentKnwnScore > 6.5 ? 'effective management' : 'room for improvement'}. ${currentKnwnScore > 6.5 ? 'Continue monitoring for potential areas of improvement to sustain this performance.' : 'Identify specific areas where enhancements can be made to boost performance.'}`;
                 
                 typeWriter(explanationText, aiExplanation, 1);
             }, 1000);
